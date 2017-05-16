@@ -1,2 +1,2 @@
-# CharLSTM
-Bidirectional Character LSTM for Sentiment Analysis - Tensorflow Implementation
+# Bidirectional Character LSTM for Sentiment Analysis - Tensorflow Implementation
+
