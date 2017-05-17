@@ -100,6 +100,10 @@ class TextReader(object):
         while n_rows > 0:
             self.data.append(next(self.file))
             n_rows -= 1
+        if n_rows == 0:
+            return True
+        else:
+            return False
 
     def iterate_minibatch(self, batch_size):
         # Returns Next Batch and Catch Bound Errors
@@ -107,6 +111,6 @@ class TextReader(object):
         n_batch = 1600000 // batch_size
 
         for i in range(n_batch):
-            self.load_to_ram(batch_size)
-            inputs, targets = self.make_minibatch(self.data)
-            yield inputs, targets
+            if self.load_to_ram(batch_size):
+                inputs, targets = self.make_minibatch(self.data)
+                yield inputs, targets
