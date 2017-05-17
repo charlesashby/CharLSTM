@@ -64,7 +64,7 @@ class TextReader(object):
         max_length = 0
 
         for sentence in sentences:
-            minibatch_y.append(0 if sentence[:1] == '0' else 1)
+            minibatch_y.append(np.array([0, 1]) if sentence[:1] == '0' else np.array([1, 0]))
             one_hot, length = self.encode_one_hot(sentence[2:-1])
 
             if length >= max_length:
