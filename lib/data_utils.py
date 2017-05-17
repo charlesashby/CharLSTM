@@ -3,7 +3,6 @@
 
 import random, csv
 import numpy as np
-import pandas as pd
 
 PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
 
@@ -111,20 +110,3 @@ class TextReader(object):
             self.load_to_ram(batch_size)
             inputs, targets = self.make_minibatch(self.data)
             yield inputs, targets
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
