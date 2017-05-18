@@ -3,8 +3,14 @@
 
 import random, csv
 import numpy as np
+from nltk.tokenize import word_tokenize
+from unidecode import unidecode
+import string
 
-PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
+printable = string.printable
+
+
+PATH = '/NOBACKUP/ashbylepoc/PycharmProjects/nlp/'
 
 # TODO: Add non-Ascii characters
 emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
@@ -29,29 +35,41 @@ def shuffle_dataset(dataset, out_file='datasets/train_set.csv'):
         writer.writerows(data)
 
 class TextReader(object):
-    """ Util for Reading the Stanford Files """
+    """ Util for Reading the Stanford CSV Files """
     # TODO: Add support for larger files and Queues
 
-    def __init__(self, file):
+    def __init__(self, file, max_word_length):
         # TextReader() takes a CSV file as input that it will read
         # through a buffer
+
         self.file = file
+        self.max_word_length = max_word_length
 
     def encode_one_hot(self, sentence):
-        # Convert Sentence to np array of Shape (sent_length, DICT_SIZE)
+        # Convert Sentences to np.array of Shape ('sent_length', 'word_length', 'emb_size')
 
+        max_word_length = self.max_word_length
         sent = []
         SENT_LENGTH = 0
-        for char in sentence:
-            try:
-                encoding = DICT[char]
-                one_hot = np.zeros(ALPHABET_SIZE)
-                one_hot[encoding] = 1
-                sent.append(one_hot)
-                SENT_LENGTH += 1
+        encoded_sentence = filter(lambda x: x in printable, sentence)
 
-            except Exception as e:
-                pass
+        for word in word_tokenize(unidecode(encoded_sentence)):
+
+            word_encoding = np.zeros(shape=(max_word_length, ALPHABET_SIZE))
+
+            for i, char in enumerate(word):
+
+                try:
+                    char_encoding = DICT[char]
+                    one_hot = np.zeros(ALPHABET_SIZE)
+                    one_hot[char_encoding] = 1
+                    word_encoding[i] = one_hot
+
+                except Exception as e:
+                    pass
+
+            sent.append(np.array(word_encoding))
+            SENT_LENGTH += 1
 
         return np.array(sent), SENT_LENGTH
 
@@ -59,11 +77,13 @@ class TextReader(object):
         # Create a minibatch of sentences and convert sentiment
         # to a one-hot vector, also takes care of padding
 
+        max_word_length = self.max_word_length
         minibatch_x = []
         minibatch_y = []
         max_length = 0
 
         for sentence in sentences:
+            # 0: Negative 1: Positive
             minibatch_y.append(np.array([0, 1]) if sentence[:1] == '0' else np.array([1, 0]))
             one_hot, length = self.encode_one_hot(sentence[2:-1])
 
@@ -72,8 +92,8 @@ class TextReader(object):
             minibatch_x.append(one_hot)
 
 
-        # data is a np.array of shape ('b', 's', 'e') we want to
-        # pad it with np.zeros of shape ('e',) to get ('b', 'SENTENCE_MAX_LENGTH', 'e')
+        # data is a np.array of shape ('b', 's', 'w', 'e') we want to
+        # pad it with np.zeros of shape ('e',) to get ('b', 'SENTENCE_MAX_LENGTH', 'WORD_MAX_LENGTH', 'e')
         def numpy_fillna(data):
             # Get lengths of each row of data
             lens = np.array([len(i) for i in data])
@@ -82,7 +102,8 @@ class TextReader(object):
             mask = np.arange(lens.max()) < lens[:, None]
 
             # Setup output array and put elements from data into masked positions
-            out = np.zeros(shape=(mask.shape + (ALPHABET_SIZE,)), dtype='float32')
+            out = np.zeros(shape=(mask.shape + (max_word_length, ALPHABET_SIZE)),
+                           dtype='float32')
 
             out[mask] = np.concatenate(data)
             return out
@@ -105,12 +126,13 @@ class TextReader(object):
         else:
             return False
 
-    def iterate_minibatch(self, batch_size):
+    def iterate_minibatch(self, batch_size, n_samples=1600000):
         # Returns Next Batch and Catch Bound Errors
 
-        n_batch = 1600000 // batch_size
+        n_batch = n_samples // batch_size
 
         for i in range(n_batch):
             if self.load_to_ram(batch_size):
                 inputs, targets = self.make_minibatch(self.data)
                 yield inputs, targets
+
