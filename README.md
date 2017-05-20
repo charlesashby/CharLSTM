@@ -3,6 +3,7 @@
 ### Requirements
 - Python 2.7
 - Tensorflow
+- NLTK
 
 ### Setup
 
