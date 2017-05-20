@@ -1,9 +1,9 @@
 # Bidirectional Character LSTM for Sentiment Analysis 
 
-##### Requirements
+### Requirements
 - Python 2.7
 - Tensorflow
 
-##### Setup
+### Setup
 
 
