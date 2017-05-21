@@ -1,16 +1,15 @@
-import tensorflow as tf
-from tensorflow.contrib import rnn
-
-import numpy as np
-import cPickle
 from lib.data_utils import *
 from lib.ops import *
+import tensorflow as tf
+from tensorflow.contrib import rnn
+import numpy as np
+
 
 PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
 TRAIN_SET = PATH + 'datasets/train_set.csv'
 TEST_SET = PATH + 'datasets/test_set.csv'
 VALID_SET = PATH + 'datasets/valid_set.csv'
-SAVE_PATH = PATH + 'checkpoints/lstm.ckpt'
+SAVE_PATH = PATH + 'checkpoints/lstm'
 LOGGING_PATH = PATH + 'checkpoints/log.txt'
 
 class LSTM(object):
@@ -27,7 +26,7 @@ class LSTM(object):
               kernels=[1, 2, 3, 4, 5, 6, 7],
               kernel_features=[25, 50, 75, 100, 125, 150, 175],
               rnn_size=650,
-              dropout=0.5,
+              dropout=0.0,
               size=700,
               train_samples=1600000 * 0.95,
               valid_samples=1600000 * 0.05):
@@ -36,9 +35,10 @@ class LSTM(object):
         self.hparams = self.get_hparams()
         self.max_word_length = self.hparams['max_word_length']
         self.train_samples = train_samples
+        self.valid_samples = valid_samples
         BATCH_SIZE = self.hparams['BATCH_SIZE']
 
-        # HighWay & TDNN Implementation are from https://github.com/mkroutikov/tf-lstm-char-cnn/blob/master/model.py
+        # Highway & TDNN Implementation are from https://github.com/mkroutikov/tf-lstm-char-cnn/blob/master/model.py
         def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'):
             """Highway Network (cf. http://arxiv.org/abs/1505.00387).
             t = sigmoid(Wy + b)
@@ -148,11 +148,12 @@ class LSTM(object):
         with tf.Session() as sess:
             sess.run(tf.initialize_all_variables())
             best_acc = 0.0
+            DONE = False
+            epoch = 1
 
-            for epoch in range(EPOCHS):
+            while epoch <= EPOCHS and not DONE:
                 loss = 0.0
                 batch = 1
-
 
                 with open(TRAIN_SET, 'r') as f:
                     reader = TextReader(f, max_word_length)
@@ -170,7 +171,7 @@ class LSTM(object):
 
                             # Write loss and accuracy to some file
                             log = open(LOGGING_PATH, 'a')
-                            log.write('%s, %6d, %.5f, %.5f' % ('train', epoch * batch, loss/batch, a))
+                            log.write('%s, %6d, %.5f, %.5f \n' % ('train', epoch * batch, loss/batch, a))
                             log.close()
 
                         # --------------
@@ -181,8 +182,8 @@ class LSTM(object):
                         if batch % 500 == 0:
                             accuracy = []
 
-                            # Validation set is very large, so validation accuracy is done on testing set
-                            # instead, change TEST_SET to VALID_SET to compute accuracy on valid set
+                            # Validation set is very large, so accuracy is computed on testing set
+                            # instead of valid set, change TEST_SET to VALID_SET to compute accuracy on valid set
                             with open(TEST_SET, 'r') as ff:
                                 valid_reader = TextReader(ff, max_word_length)
                                 for mb in valid_reader.iterate_minibatch(BATCH_SIZE, dataset=TEST_SET):
@@ -202,6 +203,7 @@ class LSTM(object):
                                 else:
                                     patience -= 500
                                     if patience <= 0:
+                                        DONE = True
                                         break
 
                                 print('Epoch: %5d/%5d -- batch: %5d/%5d -- Valid Accuracy: %.4f' %
@@ -209,10 +211,74 @@ class LSTM(object):
 
                                 # Write validation accuracy to log file
                                 log = open(LOGGING_PATH, 'a')
-                                log.write('%s, %6d, %.5f' % ('valid', epoch * batch, mean_acc))
+                                log.write('%s, %6d, %.5f \n' % ('valid', epoch * batch, mean_acc))
                                 log.close()
 
                         batch += 1
+
+    def evaluate_test_set(self):
+        '''
+        Evaluate Test Set
+        On a model that trained for around 5 epochs it achieved:
+        # Valid loss: 23.50035 -- Valid Accuracy: 0.83613
+        '''
+        BATCH_SIZE = self.hparams['BATCH_SIZE']
+        max_word_length = self.hparams['max_word_length']
+
+        pred = self.prediction
+
+        cost = - tf.reduce_sum(self.Y * tf.log(tf.clip_by_value(pred, 1e-10, 1.0)))
+
+        predictions = tf.equal(tf.argmax(pred, 1), tf.argmax(self.Y, 1))
+
+        acc = tf.reduce_mean(tf.cast(predictions, 'float32'))
+
+        # parameters for restoring variables
+        saver = tf.train.Saver()
+
+        with tf.Session() as sess:
+            print('Loading model %s...' % SAVE_PATH)
+            saver.restore(sess, SAVE_PATH)
+            print('Done!')
+            loss = []
+            accuracy = []
+
+            with open(VALID_SET, 'r') as f:
+                reader = TextReader(f, max_word_length)
+                for minibatch in reader.iterate_minibatch(BATCH_SIZE, dataset=VALID_SET):
+                    batch_x, batch_y = minibatch
+
+                    c, a = sess.run([cost, acc], feed_dict={self.X: batch_x, self.Y: batch_y})
+                    loss.append(c)
+                    accuracy.append(a)
+
+                loss = np.mean(loss)
+                accuracy = np.mean(accuracy)
+                print('Valid loss: %.5f -- Valid Accuracy: %.5f' % (loss, accuracy))
+                return loss, accuracy
+
+
+    def predict_sentences(self, sentences):
+        '''
+        Analyze Some Sentences
+
+        :sentences: list of sentences
+        '''
+        max_word_length = self.hparams['max_word_length']
+        pred = self.prediction
+        saver = tf.train.saver()
+
+        with tf.Session() as sess:
+            saver.restore(sess, SAVE_PATH)
+            reader = TextReader(file=None, max_word_length=max_word_length)
+
+            # Add placebo value '0,' at the beginning of the sentences to
+            # use the make_minibatch() method
+            sentences = ['0,' + s for s in sentences]
+            batch_x, batch_y = reader.make_minibatch(sentences)
+            p = sess.run([pred], feed_dict={self.X: batch_x, self.Y: batch_y})
+
+            return p
 
     def get_hparams(self):
         ''' Get Hyperparameters '''
@@ -229,3 +295,4 @@ if __name__ == '__main__':
     network = LSTM()
     network.build()
     network.train()
+    network.evaluate_test_set()
