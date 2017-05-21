@@ -38,6 +38,7 @@ class LSTM(object):
         self.train_samples = train_samples
         BATCH_SIZE = self.hparams['BATCH_SIZE']
 
+        # HighWay & TDNN Implementation are from https://github.com/mkroutikov/tf-lstm-char-cnn/blob/master/model.py
         def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'):
             """Highway Network (cf. http://arxiv.org/abs/1505.00387).
             t = sigmoid(Wy + b)
