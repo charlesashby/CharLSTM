@@ -6,11 +6,14 @@ import numpy as np
 from nltk.tokenize import word_tokenize
 from unidecode import unidecode
 import string
+import os
 
 printable = string.printable
 
-
-PATH = '/NOBACKUP/ashbylepoc/PycharmProjects/nlp/'
+PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
+TRAIN_SET = PATH + 'datasets/training.1600000.processed.noemoticon.csv'
+TEST_SET = PATH + 'datasets/testdata.manual.2009.06.14.csv'
+VALID_PERC = 0.05
 
 # TODO: Add non-Ascii characters
 emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
@@ -18,21 +21,57 @@ emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<
 DICT = {ch: ix for ix, ch in enumerate(emb_alphabet)}
 ALPHABET_SIZE = len(emb_alphabet)
 
-def shuffle_dataset(dataset, out_file='datasets/train_set.csv'):
-    # Create a Shuffled Dataset
-
-    with open(dataset, 'r') as f:
-        lines = f.readlines()
-        random.shuffle(lines)
-
+def reshape_lines(lines):
     data = []
     for l in lines:
         split = l.split('","')
         data.append((split[0][1:], split[-1][:-2]))
+    return data
 
+def save_csv(out_file, data):
     with open(out_file, 'wb') as f:
         writer = csv.writer(f)
         writer.writerows(data)
+    print('Data saved to file: %s' % out_file)
+
+def shuffle_datasets(valid_perc=VALID_PERC):
+    ''' Shuffle the dataset '''
+    assert os.path.exists(TRAIN_SET), 'Download the training set at http://help.sentiment140.com/for-students/'
+    assert os.path.exists(TEST_SET), 'Download the testing set at http://help.sentiment140.com/for-students/'
+
+    # Create training and validation set
+    print('Creating training & validation set...')
+
+    with open(TRAIN_SET, 'r') as f:
+        lines = f.readlines()
+        random.shuffle(lines)
+        lines_train = lines[:int(len(lines) * (1 - valid_perc))]
+        lines_valid = lines[int(len(lines) * (1 - valid_perc)):]
+
+    save_csv(PATH + 'datasets/valid_set.csv', reshape_lines(lines_valid))
+    save_csv(PATH + 'datasets/train_set.csv', reshape_lines(lines_train))
+
+    print('Creating testing set...')
+
+    with open(TEST_SET, 'r') as f:
+        lines = f.readlines()
+        random.shuffle(lines)
+    save_csv(PATH + 'datasets/test_set.csv', reshape_lines(lines))
+    print('All datasets have been created!')
+
+if not os.path.exists(PATH + 'datasets/train_set.csv'):
+    print('WARNING: You forgot to create the datasets!')
+    shuffle_datasets()
+if not os.path.exists(PATH + 'datasets/valid_set.csv'):
+    print('WARNING: You forgot to create the datasets!')
+    shuffle_datasets()
+if not os.path.exists(PATH + 'datasets/test_set.csv'):
+    print('WARNING: You forgot to create the datasets!')
+    shuffle_datasets()
+
+TRAIN_SET = PATH + 'datasets/train_set.csv'
+TEST_SET = PATH + 'datasets/test_set.csv'
+VALID_SET = PATH + 'datasets/valid_set.csv'
 
 class TextReader(object):
     """ Util for Reading the Stanford CSV Files """
@@ -42,7 +81,8 @@ class TextReader(object):
         # TextReader() takes a CSV file as input that it will read
         # through a buffer
 
-        self.file = file
+        if file != None:
+            self.file = file
         self.max_word_length = max_word_length
 
     def encode_one_hot(self, sentence):
@@ -126,13 +166,18 @@ class TextReader(object):
         else:
             return False
 
-    def iterate_minibatch(self, batch_size, n_samples=1600000):
+    def iterate_minibatch(self, batch_size, dataset=TRAIN_SET):
         # Returns Next Batch and Catch Bound Errors
+        if dataset == TRAIN_SET:
+            n_samples = 1600000 * 0.95
+        elif dataset == VALID_SET:
+            n_samples = 1600000 * 0.05
+        elif dataset == TEST_SET:
+            n_samples = 498
 
-        n_batch = n_samples // batch_size
+        n_batch = int(n_samples // batch_size)
 
         for i in range(n_batch):
             if self.load_to_ram(batch_size):
                 inputs, targets = self.make_minibatch(self.data)
                 yield inputs, targets
-
