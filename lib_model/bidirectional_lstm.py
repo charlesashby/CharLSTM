@@ -269,8 +269,8 @@ class LSTM(object):
         Analyze Some Sentences
 
         :sentences: list of sentences
-        e.g.: sentences = ['this is veeeryyy bad!!', 'I don\'t think he will be happy abt this',
-                            'YOU\'re a fool!', 'I\'m sooo happY!!!']
+        e.g.: sentences = ['this is veeeryyy bad!!', 'I dont think he will be happy abt this',
+                            'YOUre a such an incompetent fool!', 'Im sooo happY!!!']
 
         '''
         BATCH_SIZE = self.hparams['BATCH_SIZE']
