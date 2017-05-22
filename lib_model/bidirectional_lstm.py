@@ -311,7 +311,7 @@ class LSTM(object):
             'EPOCHS':           500,
             'max_word_length':  16,
             'learning_rate':    0.0001,
-            'patience':         10000,
+            'patience':         50000,
         }
 
 if __name__ == '__main__':
