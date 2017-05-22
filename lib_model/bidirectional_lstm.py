@@ -157,11 +157,12 @@ class LSTM(object):
             sess.run(tf.initialize_all_variables())
             best_acc = 0.0
             DONE = False
-            epoch = 1
+            epoch = 0
 
             while epoch <= EPOCHS and not DONE:
                 loss = 0.0
                 batch = 1
+                epoch += 1
 
                 with open(TRAIN_SET, 'r') as f:
                     reader = TextReader(f, max_word_length)
