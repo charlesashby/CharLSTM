@@ -23,7 +23,7 @@ python main.py lstm --sentences 'sentence 1' 'sentence 2' 'etc...'
 ![](charlstm_diagram.png)
 
 ### Results
-Both models were trained for more or less 80000 iterations (~ 5 epochs) and achieved similar accuracy on a test set of 80000 tweets, note that both models are neither affected by spelling mistakes or slang.
+Both models were trained for more or less 80000 iterations (~ 5 epochs) and achieved similar accuracy on a test set of 80000 tweets.
 
 ```
 # (LSTM) Valid loss: 23.50035 -- Valid Accuracy: 0.83613
@@ -37,7 +37,7 @@ Both models were trained for more or less 80000 iterations (~ 5 epochs) and achi
 # 
 # "Virus is going in reverse now, god my guts hurt", yielded (pos/neg): 0.09748/0.90252, pred: neg
 #
-# You can see it still has problem with sarcasm:
+# However, it still has problem with sarcasm:
 # "his bravery?  Haha, you have to be kidding.", yielded (pos/neg): 0.73277/0.26723, pred: pos
 
 ```
