@@ -227,6 +227,8 @@ class LSTM(object):
     def evaluate_test_set(self):
         '''
         Evaluate Test Set
+        # Valid loss: 24.41145 -- Valid Accuracy: 0.82714
+
         '''
         BATCH_SIZE = self.hparams['BATCH_SIZE']
         max_word_length = self.hparams['max_word_length']
