@@ -6,7 +6,7 @@
 - NLTK
 
 ### Setup
-
+- Download the datasets in `/datasets`
 ### Model
 
 ![](charlstm_diagram.png)
