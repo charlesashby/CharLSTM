@@ -30,12 +30,12 @@ Both models were trained for more or less 80000 iterations (~ 5 epochs) and achi
 # (Bidirectional LSTM) Valid loss: 24.41145 -- Valid Accuracy: 0.82714
 
 # Some examples...
-Sentence: "cant believe i still have to write an essay.."  , yielded results (pos/neg): 0.03065/0.96935, prediction: neg
-Sentence: "Why are you concerned with people leaking information youve declassified?" , yielded results (pos/neg): 0.04639/0.95361, prediction: neg
-Sentence: "Virus is going in reverse now, god my guts hurt" , yielded results (pos/neg): 0.09748/0.90252, prediction: neg
+"cant believe i still have to write an essay.."  , yielded (pos/neg): 0.03065/0.96935, prediction: neg
+"Why are you concerned with people leaking information youve declassified?" , yielded (pos/neg): 0.04639/0.95361, prediction: neg
+"Virus is going in reverse now, god my guts hurt" , yielded (pos/neg): 0.09748/0.90252, prediction: neg
 
 # You can see it still has problem with sarcasm:
-Sentence: "his bravery?  Haha, you have to be kidding." , yielded results (pos/neg): 0.73277/0.26723, prediction: pos
+"his bravery?  Haha, you have to be kidding." , yielded (pos/neg): 0.73277/0.26723, prediction: pos
 
 ```
 
