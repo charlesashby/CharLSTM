@@ -7,4 +7,9 @@
 
 ### Setup
 
+### Model
+
+![](charlstm_diagram.png)
+
+
 
