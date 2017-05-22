@@ -12,7 +12,7 @@
 - Train the model you want with `python main.py <MODEL_NAME> --train` 
 
 ### Using a Pretrained Model
-This repository provides a pretrained model for the unidirectional model you can test your own sentences using:
+This repository provides a pretrained model for the unidirectional LSTM you can test your own sentences using:
 
 ```
 python main.py lstm --sentences 'sentence 1' 'sentence 2' 'etc...'
