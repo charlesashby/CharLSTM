@@ -12,7 +12,7 @@ SAVE_PATH = PATH + 'checkpoints/bidirectional_lstm'
 LOGGING_PATH = PATH + 'checkpoints/log_bidirectional_lstm.txt'
 
 class LSTM(object):
-    """ Character-Level LSTM Implementation """
+    """ Character-Level bidirectional LSTM Implementation """
 
     def __init__(self):
         # X is of shape ('b', 'sentence_length', 'max_word_length', 'alphabet_size')
