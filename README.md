@@ -40,4 +40,3 @@ Both models were trained for more or less 80000 iterations (~ 5 epochs) and achi
 # However, it still has problem with sarcasm:
 # "his bravery?  Haha, you have to be kidding.", yielded (pos/neg): 0.73277/0.26723, pred: pos
 ```
-
