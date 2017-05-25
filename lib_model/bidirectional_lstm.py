@@ -266,7 +266,6 @@ class LSTM(object):
                 print('Valid loss: %.5f -- Valid Accuracy: %.5f' % (loss, accuracy))
                 return loss, accuracy
 
-
     def predict_sentences(self, sentences):
         '''
         Analyze Some Sentences
