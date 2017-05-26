@@ -36,7 +36,8 @@ Both models were trained for more or less 80000 iterations (~ 5 epochs) and achi
 #  0.04639/0.95361, pred: neg
 # 
 # "Virus is going in reverse now, god my guts hurt", yielded (pos/neg): 0.09748/0.90252, pred: neg
-#
+```
+```
 # However, it still has problem with sarcasm:
 # "his bravery?  Haha, you have to be kidding.", yielded (pos/neg): 0.73277/0.26723, pred: pos
 ```
