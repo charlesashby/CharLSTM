@@ -38,7 +38,6 @@ def linear(input_, output_size, scope=None):
 
     return tf.matmul(input_, tf.transpose(matrix)) + bias_term
 
-
 def softmax(input_, out_dim, scope=None):
     ''' SoftMax Output '''
 
