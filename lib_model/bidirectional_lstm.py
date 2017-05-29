@@ -3,6 +3,7 @@ from lib.ops import *
 import tensorflow as tf
 from tensorflow.contrib import rnn
 import numpy as np
+import Queue
 
 PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
 TRAIN_SET = PATH + 'datasets/train_set.csv'
