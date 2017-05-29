@@ -265,8 +265,6 @@ class LSTM(object):
                 print('Valid loss: %.5f -- Valid Accuracy: %.5f' % (loss, accuracy))
                 return loss, accuracy
 
-
-
     def predict_sentences(self, sentences):
         '''
         Analyze Some Sentences
@@ -307,7 +305,46 @@ class LSTM(object):
                     print('Sentence: %s , yielded results (pos/neg): %.5f/%.5f, prediction: %s' %
                           (s, p[0][i][0], p[0][i][1], 'pos' if max(p[0][i]) == p[0][i][0] else 'neg'))
             return p
+        
+    def categorize_sentences(self, sentences):
+        """ Op for categorizing multiple sentences (> BATCH_SIZE) """
+        # encode sentences
+        sentences = [s.encode('utf-8') for s in sentences]
 
+        queue = Queue.Queue()
+        reader = TextReader(file=None, max_word_length=self.max_word_length)
+        n_batch = len(sentences) // self.BATCH_SIZE
+        pred = self.prediction
+        saver = tf.train.Saver()
+        results = []
+
+        def fill_list(list, length):
+            while len(list) != length:
+                list.append('empty sentence.')
+            return list
+
+        # Fill queue with minibatches
+        for i in range(n_batch + 1):
+            if i == n_batch:
+                queue.put(fill_list(sentences, self.BATCH_SIZE))
+            else:
+                queue.put(sentences[i * self.BATCH_SIZE: (i + 1) * self.BATCH_SIZE])
+
+        # Predict
+        with tf.Session() as sess:
+            print('Loading model %s...' % SAVE_PATH)
+            saver.restore(sess, SAVE_PATH)
+            print('Done!')
+
+            while not queue.empty():
+                batch = queue.get()
+                batch = ['0, ' + s for s in batch]
+                batch_x, batch_y = reader.make_minibatch(batch)
+                p = sess.run([pred], feed_dict={self.X: batch_x, self.Y: batch_y})
+                results.append(p)
+
+        return results
+                        
     def get_hparams(self):
         ''' Get Hyperparameters '''
 
