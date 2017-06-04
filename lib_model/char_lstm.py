@@ -24,7 +24,7 @@ class LSTM(object):
 
     def build(self,
               training=True,
-              training_batch_size=1000,
+              testing_batch_size=1000,
               kernels=[1, 2, 3, 4, 5, 6, 7],
               kernel_features=[25, 50, 75, 100, 125, 150, 175],
               rnn_size=650,
@@ -42,7 +42,7 @@ class LSTM(object):
             BATCH_SIZE = self.hparams['BATCH_SIZE']
             self.BATCH_SIZE = BATCH_SIZE
         else:
-            BATCH_SIZE = training_batch_size
+            BATCH_SIZE = testing_batch_size
             self.BATCH_SIZE = BATCH_SIZE
 
         # Highway & TDNN Implementation are from https://github.com/mkroutikov/tf-lstm-char-cnn/blob/master/model.py
