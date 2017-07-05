@@ -1,25 +1,33 @@
+# coding=utf-8
+
 # Dataset needs to be shuffled before calling TextReader() instance;
 # Use shuffle_dataset() to make a new CSV file, default is /datasets/train_set.csv
 
+import codecs
 import random, csv
 import numpy as np
 from nltk.tokenize import word_tokenize
 from unidecode import unidecode
+import sys
 import string
 import os
 
+reload(sys)
+sys.setdefaultencoding("utf8")
+
 printable = string.printable
 
-PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
+PATH = '/home/malte/git/CharLSTM/'
 TRAIN_SET = PATH + 'datasets/training.1600000.processed.noemoticon.csv'
 TEST_SET = PATH + 'datasets/testdata.manual.2009.06.14.csv'
 VALID_PERC = 0.05
 
 # TODO: Add non-Ascii characters
 emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
+emb_alphabet_extra= 'äöüß“„”€❤😂♥😊😍😁😄😉♡☺♫😘☕😜😀😭😏😎😔😆😃😡😱😩😓😅😋😒😴😌😢'
 
-DICT = {ch: ix for ix, ch in enumerate(emb_alphabet)}
-ALPHABET_SIZE = len(emb_alphabet)
+DICT = {ch: ix for ix, ch in enumerate(emb_alphabet + emb_alphabet_extra.decode("utf-8"))}
+ALPHABET_SIZE = len(emb_alphabet + emb_alphabet_extra.decode("utf-8"))
 
 def reshape_lines(lines):
     data = []
@@ -42,7 +50,7 @@ def shuffle_datasets(valid_perc=VALID_PERC):
     # Create training and validation set
     print('Creating training & validation set...')
 
-    with open(TRAIN_SET, 'r') as f:
+    with codecs.open(TRAIN_SET, 'r', 'utf-8') as f:
         lines = f.readlines()
         random.shuffle(lines)
         lines_train = lines[:int(len(lines) * (1 - valid_perc))]
@@ -53,7 +61,7 @@ def shuffle_datasets(valid_perc=VALID_PERC):
 
     print('Creating testing set...')
 
-    with open(TEST_SET, 'r') as f:
+    with codecs.open(TEST_SET, 'r', 'utf-8') as f:
         lines = f.readlines()
         random.shuffle(lines)
     save_csv(PATH + 'datasets/test_set.csv', reshape_lines(lines))
@@ -91,9 +99,10 @@ class TextReader(object):
         max_word_length = self.max_word_length
         sent = []
         SENT_LENGTH = 0
-        encoded_sentence = filter(lambda x: x in printable, sentence)
+        encoded_sentence = filter(lambda x: x in (printable  + emb_alphabet_extra), sentence)
 
-        for word in word_tokenize(unidecode(encoded_sentence)):
+        print(encoded_sentence)
+        for word in word_tokenize(encoded_sentence.decode('utf-8', 'ignore').encode('utf-8')):
 
             word_encoding = np.zeros(shape=(max_word_length, ALPHABET_SIZE))
 
