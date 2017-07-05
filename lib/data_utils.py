@@ -17,7 +17,8 @@ sys.setdefaultencoding("utf8")
 
 printable = string.printable
 
-PATH = '/home/malte/git/CharLSTM/'
+# PATH needs to be changed accordingly
+PATH = '/home/ashbylepoc/PycharmProjects/CharLSTM/'
 TRAIN_SET = PATH + 'datasets/training.1600000.processed.noemoticon.csv'
 TEST_SET = PATH + 'datasets/testdata.manual.2009.06.14.csv'
 VALID_PERC = 0.05
