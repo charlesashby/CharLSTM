@@ -25,7 +25,9 @@ VALID_PERC = 0.05
 
 # TODO: Add non-Ascii characters
 emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
-emb_alphabet_extra= 'äöüß“„”€❤😂♥😊😍😁😄😉♡☺♫😘☕😜😀😭😏😎😔😆😃😡😱😩😓😅😋😒😴😌😢'
+
+# Enable emoticons and other special characters
+# emb_alphabet_extra= 'äöüß“„”€❤😂♥😊😍😁😄😉♡☺♫😘☕😜😀😭😏😎😔😆😃😡😱😩😓😅😋😒😴😌😢'
 
 DICT = {ch: ix for ix, ch in enumerate(emb_alphabet + emb_alphabet_extra.decode("utf-8"))}
 ALPHABET_SIZE = len(emb_alphabet + emb_alphabet_extra.decode("utf-8"))
