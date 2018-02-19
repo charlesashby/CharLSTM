@@ -26,11 +26,9 @@ VALID_PERC = 0.05
 # TODO: Add non-Ascii characters
 emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
 
-# Enable emoticons and other special characters
-# emb_alphabet_extra= 'äöüß“„”€❤😂♥😊😍😁😄😉♡☺♫😘☕😜😀😭😏😎😔😆😃😡😱😩😓😅😋😒😴😌😢'
 
-DICT = {ch: ix for ix, ch in enumerate(emb_alphabet + emb_alphabet_extra.decode("utf-8"))}
-ALPHABET_SIZE = len(emb_alphabet + emb_alphabet_extra.decode("utf-8"))
+DICT = {ch: ix for ix, ch in enumerate(emb_alphabet)}
+ALPHABET_SIZE = len(emb_alphabet)
 
 def reshape_lines(lines):
     data = []
@@ -53,9 +51,10 @@ def shuffle_datasets(valid_perc=VALID_PERC):
     # Create training and validation set
     print('Creating training & validation set...')
 
-    with codecs.open(TRAIN_SET, 'r', 'utf-8') as f:
+    with codecs.open(TRAIN_SET, 'r', 'latin-1') as f:
         lines = f.readlines()
         random.shuffle(lines)
+        lines = [l.encode('utf-8') for l in lines]
         lines_train = lines[:int(len(lines) * (1 - valid_perc))]
         lines_valid = lines[int(len(lines) * (1 - valid_perc)):]
 
@@ -64,9 +63,10 @@ def shuffle_datasets(valid_perc=VALID_PERC):
 
     print('Creating testing set...')
 
-    with codecs.open(TEST_SET, 'r', 'utf-8') as f:
+    with codecs.open(TEST_SET, 'r', 'latin-1') as f:
         lines = f.readlines()
         random.shuffle(lines)
+        lines = [l.encode('utf-8') for l in lines]
     save_csv(PATH + 'datasets/test_set.csv', reshape_lines(lines))
     print('All datasets have been created!')
 
@@ -102,7 +102,7 @@ class TextReader(object):
         max_word_length = self.max_word_length
         sent = []
         SENT_LENGTH = 0
-        encoded_sentence = filter(lambda x: x in (printable  + emb_alphabet_extra), sentence)
+        encoded_sentence = filter(lambda x: x in (printable), sentence)
 
         print(encoded_sentence)
         for word in word_tokenize(encoded_sentence.decode('utf-8', 'ignore').encode('utf-8')):
