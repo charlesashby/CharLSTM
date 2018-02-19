@@ -2,12 +2,8 @@
 
 ### Requirements
 - Python 2.7
-- Tensorflow GPU version 1.1.0
 - NLTK (punkt)
-
-<aside class="warning">
-This code has only been tested to work with `tensorflow-gpu==1.1.0`!!
-</aside>
+- Tensorflow GPU version 1.1.0 (NOTE: This code has only been tested to work on this version of Tensorflow!!)
 
 ### Setup
 - Download the [datasets](http://help.sentiment140.com/for-students/) in `CharLSTM/datasets`
