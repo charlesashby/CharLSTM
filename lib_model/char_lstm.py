@@ -5,7 +5,7 @@ from tensorflow.contrib import rnn
 import numpy as np
 import Queue
 
-PATH = '/home/ashbylepoc/PycharmProjects/tensorflow/'
+PATH = '/home/ashbylepoc/PycharmProjects/CharLSTM/'
 TRAIN_SET = PATH + 'datasets/train_set.csv'
 TEST_SET = PATH + 'datasets/test_set.csv'
 VALID_SET = PATH + 'datasets/valid_set.csv'
