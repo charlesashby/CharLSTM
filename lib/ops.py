@@ -47,6 +47,17 @@ def softmax(input_, out_dim, scope=None):
 
     return tf.nn.softmax(tf.matmul(input_, W) + b)
 
+
+def dense(input_, out_dim, scope=None):
+    ''' SoftMax Output '''
+
+    with tf.variable_scope(scope or 'softmax'):
+        W = tf.get_variable('W', [input_.get_shape()[1], out_dim])
+        b = tf.get_variable('b', [out_dim])
+
+    return tf.matmul(input_, W) + b
+
+
 def MLP(input_, out_dim, size=128, scope=None):
     ''' MLP Implementation '''
     assert len(input_.get_shape) == 2, "MLP takes input of dimension 2 only"

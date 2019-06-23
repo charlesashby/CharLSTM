@@ -1,18 +1,25 @@
-from lib.data_utils import *
-from lib.ops import *
+from CharLSTM.lib.data_utils import *
+from CharLSTM.lib.ops import *
 import tensorflow as tf
 from tensorflow.contrib import rnn
 import numpy as np
-import Queue
+from queue import Queue
+import tqdm
 
-PATH = '/home/ashbylepoc/PycharmProjects/CharLSTM/'
-TRAIN_SET = PATH + 'datasets/train_set.csv'
-TEST_SET = PATH + 'datasets/test_set.csv'
-VALID_SET = PATH + 'datasets/valid_set.csv'
+
+PATH = '/home/ashbylepoc/PycharmProjects/ml-marketvault/'
+TRAIN_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/train_tlc.csv'
+TEST_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/test_tlc.csv'
+VALID_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/valid_tlc.csv'
 SAVE_PATH = PATH + 'checkpoints/lstm'
 LOGGING_PATH = PATH + 'checkpoints/log.txt'
+TOP_LEVEL_CATEGORIES = ['Books', 'Movies & TV', 'Clothing, Shoes & Jewelry', 'Sports & Outdoors',
+                        'Toys & Games', 'CDs & Vinyl', 'Musical Instruments', 'Tools & Home Improvement',
+                        'Home & Kitchen', 'Health & Personal Care', 'Cell Phones & Accessories', 'Office Products',
+                        'Electronics', 'Baby', 'Beauty', 'Automotive', 'Arts, Crafts & Sewing', 'Pet Supplies',
+                        'Grocery & Gourmet Food', 'Industrial & Scientific', 'Patio, Lawn & Garden']
 
-class LSTM(object):
+class CharLSTM(object):
     """ Character-Level LSTM Implementation """
 
     def __init__(self):
@@ -20,7 +27,7 @@ class LSTM(object):
         self.hparams = self.get_hparams()
         max_word_length = self.hparams['max_word_length']
         self.X = tf.placeholder('float32', shape=[None, None, max_word_length, ALPHABET_SIZE], name='X')
-        self.Y = tf.placeholder('float32', shape=[None, 2], name='Y')
+        self.Y = tf.placeholder('float32', shape=[None, len(TOP_LEVEL_CATEGORIES)], name='Y')
 
     def build(self,
               training=True,
@@ -128,7 +135,7 @@ class LSTM(object):
             outputs = tf.transpose(outputs, [1, 0, 2])
             last = outputs[-1]
 
-        self.prediction = softmax(last, 2)
+        self.prediction = dense(last, len(TOP_LEVEL_CATEGORIES))
 
     def train(self):
         BATCH_SIZE = self.hparams['BATCH_SIZE']
@@ -138,13 +145,14 @@ class LSTM(object):
 
         pred = self.prediction
 
-        cost = - tf.reduce_sum(self.Y * tf.log(tf.clip_by_value(pred, 1e-10, 1.0)))
+        # cost = - tf.reduce_sum(self.Y * tf.log(tf.clip_by_value(pred, 1e-10, 1.0)))
+        cost = tf.nn.softmax_cross_entropy_with_logits_v2(self.Y, pred)
 
         predictions = tf.equal(tf.argmax(pred, 1), tf.argmax(self.Y, 1))
 
         acc = tf.reduce_mean(tf.cast(predictions, 'float32'))
-
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+        # top_k = tf.math.in_top_k(predictions, self.Y)
+        optimizer = tf.train.AdamOptimizer().minimize(cost)
 
         n_batch = self.train_samples // BATCH_SIZE
 
@@ -162,24 +170,26 @@ class LSTM(object):
                 loss = 0.0
                 batch = 1
                 epoch += 1
-
+                print('Training')
                 with open(TRAIN_SET, 'r') as f:
-                    reader = TextReader(f, max_word_length)
-                    for minibatch in reader.iterate_minibatch(BATCH_SIZE, dataset=TRAIN_SET):
+                    reader = TextReader(csv.reader(f), max_word_length, f)
+                    it = tqdm.tqdm(reader.iterate_minibatch(BATCH_SIZE), desc='TRAIN - accuracy: 0')
+                    for minibatch in it:
                         batch_x, batch_y = minibatch
 
                         _, c, a = sess.run([optimizer, cost, acc], feed_dict={self.X: batch_x, self.Y: batch_y})
 
                         loss += c
+                        it.set_description(f'TRAIN - accuracy: {a} - loss: {np.mean(c)}')
 
                         if batch % 100 == 0:
                             # Compute Accuracy on the Training set and print some info
                             print('Epoch: %5d/%5d -- batch: %5d/%5d -- Loss: %.4f -- Train Accuracy: %.4f' %
-                                  (epoch, EPOCHS, batch, n_batch, loss/batch, a))
+                                  (epoch, EPOCHS, batch, n_batch, np.mean(loss/batch), a))
 
                             # Write loss and accuracy to some file
                             log = open(LOGGING_PATH, 'a')
-                            log.write('%s, %6d, %.5f, %.5f \n' % ('train', epoch * batch, loss/batch, a))
+                            log.write('%s, %6d, %.5f, %.5f \n' % ('train', epoch * batch, np.mean(loss/batch), a))
                             log.close()
 
                         # --------------
@@ -192,9 +202,10 @@ class LSTM(object):
 
                             # Validation set is very large, so accuracy is computed on testing set
                             # instead of valid set, change TEST_SET to VALID_SET to compute accuracy on valid set
+                            print('Validation')
                             with open(TEST_SET, 'r') as ff:
-                                valid_reader = TextReader(ff, max_word_length)
-                                for mb in valid_reader.iterate_minibatch(BATCH_SIZE, dataset=TEST_SET):
+                                valid_reader = TextReader(csv.reader(ff), max_word_length, ff)
+                                for mb in valid_reader.iterate_minibatch(BATCH_SIZE):
                                     valid_x, valid_y = mb
                                     a = sess.run([acc], feed_dict={self.X: valid_x, self.Y: valid_y})
                                     accuracy.append(a)
@@ -235,7 +246,7 @@ class LSTM(object):
 
         pred = self.prediction
 
-        cost = - tf.reduce_sum(self.Y * tf.log(tf.clip_by_value(pred, 1e-10, 1.0)))
+        # cost = - tf.reduce_sum(self.Y * tf.log(tf.clip_by_value(pred, 1e-10, 1.0)))
 
         predictions = tf.equal(tf.argmax(pred, 1), tf.argmax(self.Y, 1))
 
@@ -252,17 +263,17 @@ class LSTM(object):
             accuracy = []
 
             with open(VALID_SET, 'r') as f:
-                reader = TextReader(f, max_word_length)
-                for minibatch in reader.iterate_minibatch(BATCH_SIZE, dataset=VALID_SET):
+                reader = TextReader(csv.reader(f), max_word_length, f)
+                it = tqdm.tqdm(reader.iterate_minibatch(BATCH_SIZE))
+                for minibatch in it:
                     batch_x, batch_y = minibatch
 
-                    c, a = sess.run([cost, acc], feed_dict={self.X: batch_x, self.Y: batch_y})
-                    loss.append(c)
+                    a = sess.run(acc, feed_dict={self.X: batch_x, self.Y: batch_y})
                     accuracy.append(a)
+                    it.set_description(f'accuracy: {np.mean(accuracy)}')
 
-                loss = np.mean(loss)
                 accuracy = np.mean(accuracy)
-                print('Valid loss: %.5f -- Valid Accuracy: %.5f' % (loss, accuracy))
+                print('Valid Accuracy: %.5f' % accuracy)
                 return loss, accuracy
 
     def predict_sentences(self, sentences):
@@ -295,7 +306,7 @@ class LSTM(object):
             sentences = ['0,' + s for s in sentences]
 
             with open(TEST_SET, 'r') as f:
-                reader = TextReader(file=f, max_word_length=max_word_length)
+                reader = TextReader(csv.reader(f), max_word_length, f)
                 reader.load_to_ram(BATCH_SIZE)
                 reader.data[:len(sentences)] = sentences
                 batch_x, batch_y = reader.make_minibatch(reader.data)
@@ -311,7 +322,7 @@ class LSTM(object):
         # encode sentences
         sentences = [s.encode('utf-8') for s in sentences]
 
-        queue = Queue.Queue()
+        queue = Queue()
         reader = TextReader(file=None, max_word_length=self.max_word_length)
         n_batch = len(sentences) // self.BATCH_SIZE
         pred = self.prediction
@@ -353,11 +364,12 @@ class LSTM(object):
             'EPOCHS':           500,
             'max_word_length':  16,
             'learning_rate':    0.0001,
-            'patience':         10000,
+            'patience':         1000000,
         }
 
+
 if __name__ == '__main__':
-    network = LSTM()
+    network = CharLSTM()
     network.build()
-    network.train()
+    # network.train()
     network.evaluate_test_set()

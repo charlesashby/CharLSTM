@@ -7,21 +7,25 @@ import codecs
 import random, csv
 import numpy as np
 from nltk.tokenize import word_tokenize
-from unidecode import unidecode
 import sys
 import string
 import os
+from lib.utils import count_lines
 
-reload(sys)
-sys.setdefaultencoding("utf8")
 
 printable = string.printable
 
 # PATH needs to be changed accordingly
-PATH = '/home/ashbylepoc/PycharmProjects/CharLSTM/'
-TRAIN_SET = PATH + 'datasets/training.1600000.processed.noemoticon.csv'
-TEST_SET = PATH + 'datasets/testdata.manual.2009.06.14.csv'
-VALID_PERC = 0.05
+TOP_LEVEL_CATEGORIES = ['Books', 'Movies & TV', 'Clothing, Shoes & Jewelry', 'Sports & Outdoors',
+                        'Toys & Games', 'CDs & Vinyl', 'Musical Instruments', 'Tools & Home Improvement',
+                        'Home & Kitchen', 'Health & Personal Care', 'Cell Phones & Accessories', 'Office Products',
+                        'Electronics', 'Baby', 'Beauty', 'Automotive', 'Arts, Crafts & Sewing', 'Pet Supplies',
+                        'Grocery & Gourmet Food', 'Industrial & Scientific', 'Patio, Lawn & Garden']
+
+# PATH = '/home/ashbylepoc/PycharmProjects/CharLSTM/'
+# TRAIN_SET = PATH + 'datasets/training.1600000.processed.noemoticon.csv'
+# TEST_SET = PATH + 'datasets/testdata.manual.2009.06.14.csv'
+# VALID_PERC = 0.05
 
 # TODO: Add non-Ascii characters
 emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
@@ -30,6 +34,7 @@ emb_alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<
 DICT = {ch: ix for ix, ch in enumerate(emb_alphabet)}
 ALPHABET_SIZE = len(emb_alphabet)
 
+
 def reshape_lines(lines):
     data = []
     for l in lines:
@@ -37,63 +42,33 @@ def reshape_lines(lines):
         data.append((split[0][1:], split[-1][:-2]))
     return data
 
+
 def save_csv(out_file, data):
     with open(out_file, 'wb') as f:
         writer = csv.writer(f)
         writer.writerows(data)
     print('Data saved to file: %s' % out_file)
 
-def shuffle_datasets(valid_perc=VALID_PERC):
-    ''' Shuffle the dataset '''
-    assert os.path.exists(TRAIN_SET), 'Download the training set at http://help.sentiment140.com/for-students/'
-    assert os.path.exists(TEST_SET), 'Download the testing set at http://help.sentiment140.com/for-students/'
 
-    # Create training and validation set
-    print('Creating training & validation set...')
+# TRAIN_SET = PATH + 'datasets/train_set.csv'
+# TEST_SET = PATH + 'datasets/test_set.csv'
+# VALID_SET = PATH + 'datasets/valid_set.csv'
+TRAIN_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/train_tlc.csv'
+TEST_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/test_tlc.csv'
+VALID_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/valid_tlc.csv'
 
-    with codecs.open(TRAIN_SET, 'r', 'latin-1') as f:
-        lines = f.readlines()
-        random.shuffle(lines)
-        lines = [l.encode('utf-8') for l in lines]
-        lines_train = lines[:int(len(lines) * (1 - valid_perc))]
-        lines_valid = lines[int(len(lines) * (1 - valid_perc)):]
-
-    save_csv(PATH + 'datasets/valid_set.csv', reshape_lines(lines_valid))
-    save_csv(PATH + 'datasets/train_set.csv', reshape_lines(lines_train))
-
-    print('Creating testing set...')
-
-    with codecs.open(TEST_SET, 'r', 'latin-1') as f:
-        lines = f.readlines()
-        random.shuffle(lines)
-        lines = [l.encode('utf-8') for l in lines]
-    save_csv(PATH + 'datasets/test_set.csv', reshape_lines(lines))
-    print('All datasets have been created!')
-
-if not os.path.exists(PATH + 'datasets/train_set.csv'):
-    print('WARNING: You forgot to create the datasets!')
-    shuffle_datasets()
-if not os.path.exists(PATH + 'datasets/valid_set.csv'):
-    print('WARNING: You forgot to create the datasets!')
-    shuffle_datasets()
-if not os.path.exists(PATH + 'datasets/test_set.csv'):
-    print('WARNING: You forgot to create the datasets!')
-    shuffle_datasets()
-
-TRAIN_SET = PATH + 'datasets/train_set.csv'
-TEST_SET = PATH + 'datasets/test_set.csv'
-VALID_SET = PATH + 'datasets/valid_set.csv'
 
 class TextReader(object):
     """ Util for Reading the Stanford CSV Files """
     # TODO: Add support for larger files and Queues
 
-    def __init__(self, file, max_word_length):
+    def __init__(self, file, max_word_length, file_pointer):
         # TextReader() takes a CSV file as input that it will read
         # through a buffer
 
-        if file != None:
-            self.file = file
+
+        self.file = file
+        self.file_pointer = file_pointer
         self.max_word_length = max_word_length
 
     def encode_one_hot(self, sentence):
@@ -102,11 +77,11 @@ class TextReader(object):
         max_word_length = self.max_word_length
         sent = []
         SENT_LENGTH = 0
-        encoded_sentence = filter(lambda x: x in (printable), sentence)
+        # encoded_sentence = filter(lambda x: x in (printable), sentence)
 
-        print(encoded_sentence)
-        for word in word_tokenize(encoded_sentence.decode('utf-8', 'ignore').encode('utf-8')):
-
+        # print(encoded_sentence)
+        # for word in word_tokenize(encoded_sentence.decode('utf-8', 'ignore').encode('utf-8')):
+        for word in word_tokenize(sentence):
             word_encoding = np.zeros(shape=(max_word_length, ALPHABET_SIZE))
 
             for i, char in enumerate(word):
@@ -136,8 +111,17 @@ class TextReader(object):
 
         for sentence in sentences:
             # 0: Negative 1: Positive
-            minibatch_y.append(np.array([0, 1]) if sentence[:1] == '0' else np.array([1, 0]))
-            one_hot, length = self.encode_one_hot(sentence[2:-1])
+            if len(sentence) > 2:
+                title = ','.join(sentence[:-1])
+                label = sentence[-1]
+                print('weird sentence')
+            else:
+                title, label = sentence
+            ohv = np.zeros(len(TOP_LEVEL_CATEGORIES))
+            ohv[int(label)] = 1.
+            # minibatch_y.append(np.array([0, 1]) if sentence[:1] == '0' else np.array([1, 0]))
+            minibatch_y.append(ohv)
+            one_hot, length = self.encode_one_hot(title)
 
             if length >= max_length:
                 max_length = length
@@ -178,18 +162,22 @@ class TextReader(object):
         else:
             return False
 
-    def iterate_minibatch(self, batch_size, dataset=TRAIN_SET):
+    def iterate_minibatch(self, batch_size):
         # Returns Next Batch and Catch Bound Errors
-        if dataset == TRAIN_SET:
-            n_samples = 1600000 * 0.95
-        elif dataset == VALID_SET:
-            n_samples = 1600000 * 0.05
-        elif dataset == TEST_SET:
-            n_samples = 498
 
+        n_samples = count_lines(self.file_pointer.name)
         n_batch = int(n_samples // batch_size)
+        print(f'Found {n_samples} lines -> n_batch: {n_batch}')
 
         for i in range(n_batch):
             if self.load_to_ram(batch_size):
                 inputs, targets = self.make_minibatch(self.data)
                 yield inputs, targets
+
+
+if __name__ == '__main__':
+    file_pointer = open(TRAIN_SET)
+    dataloader = TextReader(csv.reader(file_pointer), 50, file_pointer)
+
+    for line in dataloader.iterate_minibatch(1024):
+        print(line)
