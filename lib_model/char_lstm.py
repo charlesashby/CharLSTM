@@ -5,19 +5,24 @@ from tensorflow.contrib import rnn
 import numpy as np
 from queue import Queue
 import tqdm
+import pickle
 
 
+threshold = 1000
 PATH = '/home/ashbylepoc/PycharmProjects/ml-marketvault/'
-TRAIN_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/train_tlc.csv'
-TEST_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/test_tlc.csv'
-VALID_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/valid_tlc.csv'
-SAVE_PATH = PATH + 'checkpoints/lstm'
-LOGGING_PATH = PATH + 'checkpoints/log.txt'
+TRAIN_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/all_data-desc-no_dup-cleaned-train_tlc.csv'
+TEST_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/all_data-desc-no_dup-cleaned-test_tlc.csv'
+VALID_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/all_data-desc-no_dup-cleaned-valid_tlc.csv'
+SAVE_PATH = PATH + 'checkpoints/all_taxonomies/lstm'
+LOGGING_PATH = PATH + 'checkpoints/all_taxonomies/log.txt'
 TOP_LEVEL_CATEGORIES = ['Books', 'Movies & TV', 'Clothing, Shoes & Jewelry', 'Sports & Outdoors',
                         'Toys & Games', 'CDs & Vinyl', 'Musical Instruments', 'Tools & Home Improvement',
                         'Home & Kitchen', 'Health & Personal Care', 'Cell Phones & Accessories', 'Office Products',
                         'Electronics', 'Baby', 'Beauty', 'Automotive', 'Arts, Crafts & Sewing', 'Pet Supplies',
                         'Grocery & Gourmet Food', 'Industrial & Scientific', 'Patio, Lawn & Garden']
+
+categories = pickle.load(open(f'{PATH}/pickles/optimized_taxonomies.pickle', 'rb'))
+
 
 class CharLSTM(object):
     """ Character-Level LSTM Implementation """
@@ -27,7 +32,7 @@ class CharLSTM(object):
         self.hparams = self.get_hparams()
         max_word_length = self.hparams['max_word_length']
         self.X = tf.placeholder('float32', shape=[None, None, max_word_length, ALPHABET_SIZE], name='X')
-        self.Y = tf.placeholder('float32', shape=[None, len(TOP_LEVEL_CATEGORIES)], name='Y')
+        self.Y = tf.placeholder('float32', shape=[None, len(categories)], name='Y')
 
     def build(self,
               training=True,
@@ -135,7 +140,7 @@ class CharLSTM(object):
             outputs = tf.transpose(outputs, [1, 0, 2])
             last = outputs[-1]
 
-        self.prediction = dense(last, len(TOP_LEVEL_CATEGORIES))
+        self.prediction = dense(last, len(categories))
 
     def train(self):
         BATCH_SIZE = self.hparams['BATCH_SIZE']
@@ -371,5 +376,5 @@ class CharLSTM(object):
 if __name__ == '__main__':
     network = CharLSTM()
     network.build()
-    # network.train()
+    network.train()
     network.evaluate_test_set()

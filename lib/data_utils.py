@@ -11,7 +11,7 @@ import sys
 import string
 import os
 from lib.utils import count_lines
-
+from CharLSTM.lib_model.char_lstm import categories
 
 printable = string.printable
 
@@ -53,9 +53,10 @@ def save_csv(out_file, data):
 # TRAIN_SET = PATH + 'datasets/train_set.csv'
 # TEST_SET = PATH + 'datasets/test_set.csv'
 # VALID_SET = PATH + 'datasets/valid_set.csv'
-TRAIN_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/train_tlc.csv'
-TEST_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/test_tlc.csv'
-VALID_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/valid_tlc.csv'
+TRAIN_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/all_data-desc-no_dup-cleaned-train_tlc.csv'
+TEST_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/all_data-desc-no_dup-cleaned-test_tlc.csv'
+VALID_SET = '/home/ashbylepoc/PycharmProjects/ml-marketvault/amazon_data/all_data-desc-no_dup-cleaned-valid_tlc.csv'
+
 
 
 class TextReader(object):
@@ -117,7 +118,7 @@ class TextReader(object):
                 print('weird sentence')
             else:
                 title, label = sentence
-            ohv = np.zeros(len(TOP_LEVEL_CATEGORIES))
+            ohv = np.zeros(len(categories))
             ohv[int(label)] = 1.
             # minibatch_y.append(np.array([0, 1]) if sentence[:1] == '0' else np.array([1, 0]))
             minibatch_y.append(ohv)
