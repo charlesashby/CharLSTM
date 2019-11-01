@@ -7,7 +7,7 @@ futures==3.2.0
 html5lib==0.9999999 
 Markdown==2.6.11
 mock==2.0.0
-nltk==3.2.5
+nltk==3.4.5
 numpy==1.14.0 
 pbr==3.1.1
 protobuf==3.5.1
